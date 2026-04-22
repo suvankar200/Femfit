@@ -1,0 +1,572 @@
+{
+  "users": [
+    {
+      "_id": "1GGywhkNgB2gNzPHU2wgI",
+      "name": "Suvankar Pramanik",
+      "email": "pramaniksuvankar2004@gmail.com",
+      "password": "$2b$10$tCDdygMHGkC1ecAVm5N1cuP46PRbZ4khtidEQBPCRTVWm2P66Xri.",
+      "createdAt": "2026-03-26T06:08:40.661Z"
+    },
+    {
+      "_id": "gamPbnON-ay7SWOvXIHdO",
+      "name": "Test User",
+      "email": "test@test.com",
+      "password": "$2b$10$U431fzfbJD7H9APmZGwkG.3IbuzCsdYQrqY6U8fzt56a6oPm6SLGa",
+      "createdAt": "2026-04-04T15:03:16.275Z"
+    },
+    {
+      "_id": "0ZffvJNUc-L69xmQG7lgb",
+      "name": "Bhabani",
+      "email": "officialbsk@gmail.com",
+      "password": "$2b$10$/.Qr9lfMKOqOVRhoWIm34OZ.Llu0/RxOgcn60bLFEchbxNvmU1K62",
+      "createdAt": "2026-04-05T09:53:26.652Z"
+    },
+    {
+      "_id": "LVpm3bAiqnAOIz1X7B5C7",
+      "name": "shreyan roy",
+      "email": "pramaniksuvankar200@gmail.com",
+      "password": "$2b$10$yiSmSjFTsvj.Ftc76tMhBe9Db2cA61cXyEZMFt8yqoLoPjeqoGaPm",
+      "createdAt": "2026-04-21T06:50:54.449Z"
+    },
+    {
+      "_id": "RpV85b1yHXAcxw3o4Ad_K",
+      "name": "shreyan roy",
+      "email": "shreyanroy@gmail.com",
+      "password": "$2b$10$.u7MLp0GO8efOAXP3OceP.oQp820qt9z3VbAJPnhM9kxqx1kELLfy",
+      "createdAt": "2026-04-21T06:51:39.441Z"
+    },
+    {
+      "_id": "n9LHCq0MHpWePwNXtRGkk",
+      "name": "Test User",
+      "email": "test_ml@example.com",
+      "password": "$2b$10$JnIiUq.Ic5Bn1.lPILea5ehZ5XWbLd0bv8IsrCngWJJbWNDe63YGa",
+      "language": "bn",
+      "createdAt": "2026-04-21T14:58:59.680Z"
+    },
+    {
+      "_id": "Hg9quHdCFrCcxly-eFTuy",
+      "name": "Vidisha Das",
+      "email": "vidishadas2005@gmail.com",
+      "password": "$2b$10$krq2q/3l5XzjDWcop1wJauZy7sCT47DYKxBJT9Ljbpk/jHRj8X0UK",
+      "language": "en",
+      "createdAt": "2026-04-22T06:02:31.555Z"
+    }
+  ],
+  "cycles": [
+    {
+      "userId": "1GGywhkNgB2gNzPHU2wgI",
+      "cycleLength": 28,
+      "periodDuration": 5,
+      "lastPeriodDate": "2026-03-11",
+      "updatedAt": "2026-03-26T06:08:49.293Z",
+      "createdAt": "2026-03-26T06:08:49.293Z"
+    },
+    {
+      "userId": "gamPbnON-ay7SWOvXIHdO",
+      "cycleLength": 28,
+      "periodDuration": 5,
+      "lastPeriodDate": "2026-03-20",
+      "updatedAt": "2026-04-04T15:03:33.942Z",
+      "createdAt": "2026-04-04T15:03:33.942Z"
+    },
+    {
+      "userId": "0ZffvJNUc-L69xmQG7lgb",
+      "cycleLength": 28,
+      "periodDuration": 5,
+      "lastPeriodDate": "2026-04-22",
+      "updatedAt": "2026-04-05T09:53:40.683Z",
+      "createdAt": "2026-04-05T09:53:40.683Z"
+    },
+    {
+      "userId": "RpV85b1yHXAcxw3o4Ad_K",
+      "cycleLength": 28,
+      "periodDuration": 5,
+      "lastPeriodDate": "2026-03-24",
+      "updatedAt": "2026-04-21T06:52:33.564Z",
+      "createdAt": "2026-04-21T06:52:33.564Z"
+    },
+    {
+      "userId": "n9LHCq0MHpWePwNXtRGkk",
+      "cycleLength": 28,
+      "periodDuration": 5,
+      "lastPeriodDate": "2026-04-01",
+      "updatedAt": "2026-04-21T14:59:36.243Z",
+      "createdAt": "2026-04-21T14:59:36.244Z"
+    },
+    {
+      "userId": "Hg9quHdCFrCcxly-eFTuy",
+      "cycleLength": 28,
+      "periodDuration": 5,
+      "lastPeriodDate": "2026-04-09",
+      "updatedAt": "2026-04-22T06:02:39.685Z",
+      "createdAt": "2026-04-22T06:02:39.685Z"
+    }
+  ],
+  "assessments": [
+    {
+      "_id": "4Tn6P1F7xBycsIMd_s-hl",
+      "userId": "gamPbnON-ay7SWOvXIHdO",
+      "type": "pcos",
+      "answers": {
+        "cycleOver35": true,
+        "lessThan8Cycles": true,
+        "amenorrhea3Months": true,
+        "acneModSevere": true,
+        "facialHair": true,
+        "hairThinning": true,
+        "bmiOver25": true,
+        "waistOver80": true,
+        "familyDiabetes": true,
+        "acanthosis": true,
+        "sleepUnder6": true,
+        "highScreenBeforeBed": true
+      },
+      "result": {
+        "engine": "pcos",
+        "title": "PCOS Risk Score",
+        "points": 32,
+        "maxPoints": 32,
+        "band": "high",
+        "confidence": {
+          "score": 100,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "Amenorrhea >3 months",
+          "Cycle length >35 days",
+          "Less than 8 cycles/year",
+          "Facial hair growth",
+          "Acanthosis nigricans"
+        ],
+        "recommendation": "High risk detected. A hormone panel test is strongly recommended. Please consult a gynecologist.",
+        "recommendedTest": "Hormone Panel"
+      },
+      "createdAt": "2026-04-04T15:06:34.200Z"
+    },
+    {
+      "_id": "yp15mbgzHTddK2b1M7Pqc",
+      "userId": "1GGywhkNgB2gNzPHU2wgI",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "75",
+        "heightCm": "172"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 25.4,
+        "category": "Overweight",
+        "band": "moderate",
+        "recommendation": "You are slightly overweight. Consider regular exercise and a balanced diet."
+      },
+      "createdAt": "2026-04-05T08:47:43.929Z"
+    },
+    {
+      "_id": "WTrV4fivrCCBd1PLwJOyB",
+      "userId": "1GGywhkNgB2gNzPHU2wgI",
+      "type": "pcos",
+      "answers": {
+        "cycleOver35": true,
+        "lessThan8Cycles": true,
+        "amenorrhea3Months": true,
+        "acneModSevere": true,
+        "facialHair": true,
+        "hairThinning": true,
+        "bmiOver25": true,
+        "waistOver80": true,
+        "familyDiabetes": true,
+        "acanthosis": false,
+        "sleepUnder6": false,
+        "highScreenBeforeBed": false
+      },
+      "result": {
+        "engine": "pcos",
+        "title": "PCOS Risk Score",
+        "points": 26,
+        "maxPoints": 32,
+        "band": "high",
+        "confidence": {
+          "score": 100,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "Amenorrhea >3 months",
+          "Cycle length >35 days",
+          "Less than 8 cycles/year",
+          "Facial hair growth",
+          "Moderate/severe acne"
+        ],
+        "recommendation": "High risk detected. A hormone panel test is strongly recommended. Please consult a gynecologist.",
+        "recommendedTest": "Hormone Panel"
+      },
+      "createdAt": "2026-04-05T08:48:32.306Z"
+    },
+    {
+      "_id": "Vvm2CpeZKui6kKpKzIIAh",
+      "userId": "1GGywhkNgB2gNzPHU2wgI",
+      "type": "anemia",
+      "answers": {
+        "heavyBleeding": true,
+        "periodOver5Days": true,
+        "fatigue": true,
+        "dizziness": true,
+        "paleConjunctiva": true,
+        "bmiUnder18": true,
+        "wormHistory": true,
+        "vegNoIron": false,
+        "lowLeafyVeg": false,
+        "teaCoffeeWithMeals": false,
+        "hbLow": false,
+        "mcvLow": false,
+        "ferritinLow": false
+      },
+      "result": {
+        "engine": "anemia",
+        "title": "Anemia Risk Score",
+        "points": 16,
+        "maxPoints": 31,
+        "band": "high",
+        "confidence": {
+          "score": 100,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "Heavy menstrual bleeding",
+          "Pale conjunctiva",
+          "Period duration >5 days",
+          "Persistent fatigue",
+          "Dizziness"
+        ],
+        "recommendation": "High risk detected. A Complete Blood Count (CBC) test is strongly recommended.",
+        "recommendedTest": "CBC (Complete Blood Count)"
+      },
+      "createdAt": "2026-04-05T08:49:12.112Z"
+    },
+    {
+      "_id": "uPVtp_1Hrq8fohWzcfxRi",
+      "userId": "gamPbnON-ay7SWOvXIHdO",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "30.8",
+        "heightCm": "152"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 13.3,
+        "category": "Underweight",
+        "band": "high",
+        "recommendation": "You are underweight. Focus on nutrition-rich meals and consult a dietitian if needed."
+      },
+      "createdAt": "2026-04-05T09:05:01.874Z"
+    },
+    {
+      "_id": "ShknWysettctbSVOGLoPk",
+      "userId": "gamPbnON-ay7SWOvXIHdO",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "554",
+        "heightCm": "02525"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 0.9,
+        "category": "Underweight",
+        "band": "high",
+        "recommendation": "You are underweight. Focus on nutrition-rich meals and consult a dietitian if needed."
+      },
+      "createdAt": "2026-04-05T09:06:25.583Z"
+    },
+    {
+      "_id": "BIvyJMGFE9x8h8gZjKrrf",
+      "userId": "1GGywhkNgB2gNzPHU2wgI",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "60",
+        "heightCm": "175"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 19.6,
+        "category": "Normal",
+        "band": "low",
+        "recommendation": "Your BMI is in the healthy range. Keep maintaining a balanced diet and exercise!"
+      },
+      "createdAt": "2026-04-05T09:48:41.216Z"
+    },
+    {
+      "_id": "K3vYTP92PUMYoTitbXdu2",
+      "userId": "1GGywhkNgB2gNzPHU2wgI",
+      "type": "idi",
+      "answers": {
+        "hairFall": false,
+        "brittleNails": false,
+        "restlessLegs": false,
+        "coldIntolerance": true,
+        "poorConcentration": false,
+        "fatigue": false,
+        "ferritinLow": false
+      },
+      "result": {
+        "engine": "idi",
+        "title": "Iron Deficiency Index",
+        "points": 2,
+        "maxPoints": 17,
+        "band": "low",
+        "confidence": {
+          "score": 100,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "Cold intolerance"
+        ],
+        "recommendation": "Iron levels appear adequate. Continue a balanced diet.",
+        "recommendedTest": null
+      },
+      "createdAt": "2026-04-05T09:49:31.476Z"
+    },
+    {
+      "_id": "kf2GrfirVBCYWXQ5n38d3",
+      "userId": "1GGywhkNgB2gNzPHU2wgI",
+      "type": "mental",
+      "answers": {
+        "sleepUnder6": false,
+        "nightAwakenings": false,
+        "highScreenTime": true,
+        "fatigue": false,
+        "moodSwings": false,
+        "poorConcentration": false
+      },
+      "result": {
+        "engine": "mental",
+        "title": "Mental Health Score",
+        "points": 2,
+        "maxPoints": 14,
+        "band": "low",
+        "bandLabel": "Stable",
+        "confidence": {
+          "score": 100,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "High screen time"
+        ],
+        "recommendation": "Your mental health looks stable. Keep up healthy habits!",
+        "recommendedTest": null
+      },
+      "createdAt": "2026-04-05T09:51:19.632Z"
+    },
+    {
+      "_id": "9sDiljt8dgLEsCjnFH74G",
+      "userId": "RpV85b1yHXAcxw3o4Ad_K",
+      "type": "pcos",
+      "answers": {
+        "cycleOver35": false,
+        "lessThan8Cycles": true,
+        "amenorrhea3Months": true,
+        "acneModSevere": true,
+        "facialHair": false,
+        "hairThinning": true,
+        "bmiOver25": true,
+        "waistOver80": false,
+        "familyDiabetes": true,
+        "acanthosis": true,
+        "sleepUnder6": false,
+        "highScreenBeforeBed": true
+      },
+      "result": {
+        "engine": "pcos",
+        "title": "PCOS Risk Score",
+        "points": 21,
+        "maxPoints": 32,
+        "band": "high",
+        "confidence": {
+          "score": 100,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "Amenorrhea >3 months",
+          "Less than 8 cycles/year",
+          "Acanthosis nigricans",
+          "Moderate/severe acne",
+          "Hair thinning"
+        ],
+        "recommendation": "High risk detected. A hormone panel test is strongly recommended. Please consult a gynecologist.",
+        "recommendedTest": "Hormone Panel"
+      },
+      "createdAt": "2026-04-21T06:54:20.472Z"
+    },
+    {
+      "_id": "73UBJCBK9ojsMvowCFY0i",
+      "userId": "RpV85b1yHXAcxw3o4Ad_K",
+      "type": "anemia",
+      "answers": {
+        "heavyBleeding": true,
+        "periodOver5Days": true,
+        "fatigue": true,
+        "dizziness": true,
+        "paleConjunctiva": true,
+        "bmiUnder18": false,
+        "wormHistory": false,
+        "vegNoIron": true,
+        "lowLeafyVeg": true,
+        "teaCoffeeWithMeals": true,
+        "hbLow": true,
+        "ferritinLow": false
+      },
+      "result": {
+        "engine": "anemia",
+        "title": "Anemia Risk Score",
+        "points": 21,
+        "maxPoints": 31,
+        "band": "high",
+        "confidence": {
+          "score": 92,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "Low hemoglobin (lab)",
+          "Heavy menstrual bleeding",
+          "Pale conjunctiva",
+          "Period duration >5 days",
+          "Persistent fatigue"
+        ],
+        "recommendation": "High risk detected. A Complete Blood Count (CBC) test is strongly recommended.",
+        "recommendedTest": "CBC (Complete Blood Count)"
+      },
+      "createdAt": "2026-04-21T07:00:48.386Z"
+    },
+    {
+      "_id": "vaS1Edfl_Z5Zlmf8WYSFs",
+      "userId": "gamPbnON-ay7SWOvXIHdO",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "25",
+        "heightCm": "25"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 400,
+        "category": "Obese",
+        "band": "high",
+        "recommendation": "Your BMI indicates obesity. Please consult a healthcare provider for a personalized plan."
+      },
+      "createdAt": "2026-04-21T15:00:07.082Z"
+    },
+    {
+      "_id": "1Sy9_4gm4sHf9yAXLmayn",
+      "userId": "n9LHCq0MHpWePwNXtRGkk",
+      "type": "pcos",
+      "answers": {
+        "cycleOver35": true,
+        "lessThan8Cycles": true,
+        "amenorrhea3Months": true,
+        "acneModSevere": true,
+        "facialHair": true,
+        "hairThinning": true,
+        "bmiOver25": true,
+        "waistOver80": true,
+        "familyDiabetes": true,
+        "acanthosis": true,
+        "sleepUnder6": true,
+        "highScreenBeforeBed": true
+      },
+      "result": {
+        "engine": "pcos",
+        "title": "PCOS Risk Score",
+        "points": 32,
+        "maxPoints": 32,
+        "band": "high",
+        "confidence": {
+          "score": 100,
+          "label": "confidenceHigh"
+        },
+        "contributors": [
+          "Amenorrhea >3 months",
+          "Cycle length >35 days",
+          "Less than 8 cycles/year",
+          "Facial hair growth",
+          "Acanthosis nigricans"
+        ],
+        "recommendation": "High risk detected. A hormone panel test is strongly recommended. Please consult a gynecologist.",
+        "recommendedTest": "Hormone Panel"
+      },
+      "createdAt": "2026-04-21T15:21:53.697Z"
+    },
+    {
+      "_id": "HFeha_h4sgsv1Oqb9IV3-",
+      "userId": "Hg9quHdCFrCcxly-eFTuy",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "20",
+        "heightCm": "456"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 1,
+        "category": "Underweight",
+        "band": "high",
+        "recommendation": "You are underweight. Focus on nutrition-rich meals and consult a dietitian if needed."
+      },
+      "createdAt": "2026-04-22T06:06:07.830Z"
+    },
+    {
+      "_id": "-kPqEEQvHuscjEYnHa907",
+      "userId": "Hg9quHdCFrCcxly-eFTuy",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "1232",
+        "heightCm": "2324"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 2.3,
+        "category": "Underweight",
+        "band": "high",
+        "recommendation": "You are underweight. Focus on nutrition-rich meals and consult a dietitian if needed."
+      },
+      "createdAt": "2026-04-22T06:55:54.466Z"
+    },
+    {
+      "_id": "u5wAZilmA62mqB2AQ6bY2",
+      "userId": "Hg9quHdCFrCcxly-eFTuy",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "21",
+        "heightCm": "3213"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 0,
+        "category": "Underweight",
+        "band": "high",
+        "recommendation": "You are underweight. Focus on nutrition-rich meals and consult a dietitian if needed."
+      },
+      "createdAt": "2026-04-22T06:57:37.136Z"
+    },
+    {
+      "_id": "duOuu4ACSdownE34lPQVx",
+      "userId": "Hg9quHdCFrCcxly-eFTuy",
+      "type": "bmi",
+      "answers": {
+        "weightKg": "21",
+        "heightCm": "231"
+      },
+      "result": {
+        "engine": "bmi",
+        "title": "BMI Calculator",
+        "bmi": 3.9,
+        "category": "Underweight",
+        "band": "high",
+        "recommendation": "You are underweight. Focus on nutrition-rich meals and consult a dietitian if needed."
+      },
+      "createdAt": "2026-04-22T06:59:48.421Z"
+    }
+  ]
+}
