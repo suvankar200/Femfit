@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://femfit-backend-33md.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
