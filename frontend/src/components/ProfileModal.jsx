@@ -1,41 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { X, Save, Camera } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const ProfileModal = ({ user, onClose }) => {
   const { updateUser } = useAuth();
   const [form, setForm] = useState({ name: user?.name || '', dateOfBirth: '' });
-  const [avatar, setAvatar] = useState(() => localStorage.getItem('profileAvatar') || null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const fileRef = useRef();
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState(false);
 
   const config = { headers: { Authorization: `Bearer ${user.token}` } };
 
   useEffect(() => {
     axios.get('/api/user/profile', config)
-      .then(({ data }) => {
-        setForm({ name: data.name || '', dateOfBirth: data.dateOfBirth || '' });
-      })
+      .then(({ data }) => setForm({ name: data.name || '', dateOfBirth: data.dateOfBirth || '' }))
       .catch(() => {})
       .finally(() => setFetching(false));
   }, []);
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 500 * 1024) { setError('Image too large — max 500KB.'); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target.result;
-      setAvatar(base64);
-      localStorage.setItem('profileAvatar', base64);
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -46,16 +29,16 @@ const ProfileModal = ({ user, onClose }) => {
     setLoading(true);
     try {
       const { data } = await axios.patch('/api/user/profile', form, config);
-      // ✅ Update AuthContext + localStorage so header reflects new name instantly
       updateUser({ name: data.name });
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
+      setTimeout(() => setSuccess(false), 2500);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save. Try again.');
     } finally { setLoading(false); }
   };
 
-  const initials = (form.name || user?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const initials = (form.name || user?.name || '?')
+    .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   const age = form.dateOfBirth
     ? Math.floor((new Date() - new Date(form.dateOfBirth)) / (365.25 * 86400000))
@@ -64,6 +47,7 @@ const ProfileModal = ({ user, onClose }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card profile-modal-card" onClick={e => e.stopPropagation()}>
+
         {/* Header */}
         <div className="modal-header">
           <h2 style={{ margin: 0, fontSize: '1.3rem' }}>👤 My Profile</h2>
@@ -74,24 +58,21 @@ const ProfileModal = ({ user, onClose }) => {
           <p className="text-muted" style={{ textAlign: 'center', padding: '2rem 0' }}>Loading…</p>
         ) : (
           <>
-            {/* Avatar Section */}
+            {/* Identity summary — initials only, no photo upload */}
             <div className="profile-avatar-section">
-              <div className="profile-avatar-wrap" onClick={() => fileRef.current?.click()}>
-                {avatar
-                  ? <img src={avatar} alt="Profile" className="profile-avatar-img" />
-                  : <div className="profile-avatar-initials">{initials}</div>
-                }
-                <div className="profile-avatar-overlay"><Camera size={18} color="white" /></div>
+              <div className="profile-avatar-initials-bubble">
+                {initials}
               </div>
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
               <div>
                 <p style={{ margin: 0, fontWeight: 600, fontSize: '1.1rem' }}>{form.name || user?.name}</p>
                 <p className="text-muted" style={{ margin: 0, fontSize: '0.9rem' }}>{user?.email}</p>
-                {age !== null && <p className="text-muted" style={{ margin: 0, fontSize: '0.85rem' }}>Age: {age} years</p>}
+                {age !== null && (
+                  <p className="text-muted" style={{ margin: 0, fontSize: '0.85rem' }}>Age: {age} years</p>
+                )}
               </div>
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            {error   && <div className="error-message">{error}</div>}
             {success && (
               <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid #10b981', borderRadius: '8px', padding: '0.6rem 1rem', color: '#10b981', marginBottom: '1rem', fontSize: '0.9rem' }}>
                 ✅ Profile saved!
@@ -120,14 +101,6 @@ const ProfileModal = ({ user, onClose }) => {
                 {loading ? 'Saving…' : 'Save Profile'}
               </button>
             </form>
-
-            {/* Remove avatar */}
-            {avatar && (
-              <button className="btn btn-outline" style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}
-                onClick={() => { setAvatar(null); localStorage.removeItem('profileAvatar'); }}>
-                Remove Photo
-              </button>
-            )}
           </>
         )}
       </div>

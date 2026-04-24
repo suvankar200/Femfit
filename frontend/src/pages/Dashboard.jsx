@@ -13,20 +13,12 @@ import { LogOut, Droplets, Sparkles, Activity, Heart, Pencil, X, Save, Baby, Fil
 import { startOfDay, isWithinInterval, isSameDay } from 'date-fns';
 import { generateHealthReport } from '../utils/pdfReport';
 
-// ── Avatar bubble ─────────────────────────────────────────────────────────────
+// ── Avatar bubble — initials only ────────────────────────────────────────────
 const AvatarBubble = ({ name, onClick }) => {
-  const avatar = localStorage.getItem('profileAvatar');
   const initials = (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   return (
-    <button
-      onClick={onClick}
-      title="My Profile"
-      className="avatar-bubble"
-    >
-      {avatar
-        ? <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : <span className="avatar-initials">{initials}</span>
-      }
+    <button onClick={onClick} title="My Profile" className="avatar-bubble">
+      <span className="avatar-initials">{initials}</span>
     </button>
   );
 };
@@ -328,7 +320,7 @@ const Dashboard = () => {
 
           <HealthCheckGrid cycleData={cycleData} />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <button className="btn btn-outline" style={{ width: 'auto', gap: '8px' }}
               onClick={() => generateHealthReport({ user, cycleData, predictions, assessments })}>
               <FileDown size={16} /> Download Health Report

@@ -1,182 +1,190 @@
+import jsPDF from 'jspdf';
+
 /**
  * generateHealthReport
- * Opens a print-ready window the user can save as PDF.
- * No external library required.
+ * Directly downloads a PDF — no popups, no print dialog.
  */
 export function generateHealthReport({ user, cycleData, assessments, predictions }) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const name = user?.name || 'User';
-  const today = new Date();
+  const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
-  const fmtShort = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
+  const fmt = (d) =>
+    d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+  const fmtShort = (d) =>
+    d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
 
-  // Calculate previous 3 periods
-  const periods = [];
+  const W = 210; // A4 width mm
+  let y = 0;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const pink   = [244, 63, 94];
+  const dark   = [31, 41, 55];
+  const muted  = [107, 114, 128];
+  const lightBg = [253, 242, 244];
+
+  const text = (str, x, yy, opts = {}) => {
+    doc.setFontSize(opts.size || 11);
+    doc.setTextColor(...(opts.color || dark));
+    if (opts.bold) doc.setFont('helvetica', 'bold');
+    else doc.setFont('helvetica', 'normal');
+    doc.text(String(str), x, yy, { maxWidth: opts.maxWidth });
+  };
+
+  const line = (yy, color = [229, 231, 235]) => {
+    doc.setDrawColor(...color);
+    doc.line(14, yy, W - 14, yy);
+  };
+
+  const box = (x, yy, w, h, color = lightBg) => {
+    doc.setFillColor(...color);
+    doc.roundedRect(x, yy, w, h, 3, 3, 'F');
+  };
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  doc.setFillColor(...pink);
+  doc.rect(0, 0, W, 22, 'F');
+  text('🌸 Swasthasaheli', 14, 9, { size: 16, bold: true, color: [255, 255, 255] });
+  text("Women's Health Report", 14, 16, { size: 9, color: [255, 200, 210] });
+  text(name, W - 14, 9, { size: 11, bold: true, color: [255, 255, 255] });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 200, 210);
+  doc.text(`Generated: ${today}`, W - 14, 16, { align: 'right' });
+
+  y = 32;
+
+  // ── Cycle Summary ─────────────────────────────────────────────────────────
+  text('Cycle Summary', 14, y, { size: 13, bold: true, color: pink });
+  y += 2;
+  line(y, pink);
+  y += 5;
+
+  const half = (W - 28 - 4) / 2;
+  // Box 1
+  box(14, y, half, 18);
+  text('Last Period', 18, y + 6, { size: 8, color: muted });
+  text(fmtShort(cycleData?.lastPeriodDate), 18, y + 13, { size: 11, bold: true });
+  // Box 2
+  box(14 + half + 4, y, half, 18);
+  text('Cycle Length', 18 + half + 4, y + 6, { size: 8, color: muted });
+  text(`${cycleData?.cycleLength || '—'} days`, 18 + half + 4, y + 13, { size: 11, bold: true });
+  y += 22;
+
+  // Box 3
+  box(14, y, half, 18);
+  text('Period Duration', 18, y + 6, { size: 8, color: muted });
+  text(`${cycleData?.periodDuration || '—'} days`, 18, y + 13, { size: 11, bold: true });
+  // Box 4
+  box(14 + half + 4, y, half, 18);
+  text('Next Ovulation', 18 + half + 4, y + 6, { size: 8, color: muted });
+  text(fmtShort(predictions?.ovulation), 18 + half + 4, y + 13, { size: 11, bold: true });
+  y += 22;
+
+  // Next period highlight
+  box(14, y, W - 28, 20, [254, 226, 226]);
+  text('Next Expected Period', 18, y + 6, { size: 8, color: muted });
+  text(fmt(predictions?.nextPeriod), 18, y + 14, { size: 14, bold: true, color: [225, 29, 72] });
+  y += 26;
+
+  // ── Period History ────────────────────────────────────────────────────────
+  text('Period History', 14, y, { size: 13, bold: true, color: pink });
+  y += 2;
+  line(y, pink);
+  y += 5;
+
+  // Table header
+  box(14, y, W - 28, 8, [253, 242, 244]);
+  text('Period Start', 18, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
+  text('Period End', 80, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
+  text('Duration', 150, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
+  y += 10;
+
   if (cycleData?.lastPeriodDate && cycleData?.cycleLength) {
     let start = new Date(cycleData.lastPeriodDate);
+    const rows = [];
     for (let i = 0; i < 4; i++) {
-      periods.unshift({
+      rows.unshift({
         start: new Date(start),
         end: new Date(new Date(start).setDate(start.getDate() + (cycleData.periodDuration || 5) - 1)),
       });
       start = new Date(start.setDate(start.getDate() - cycleData.cycleLength));
     }
+    rows.forEach((r, idx) => {
+      if (idx % 2 === 0) box(14, y - 2, W - 28, 9, [249, 250, 251]);
+      text(fmt(r.start), 18, y + 4.5, { size: 9 });
+      text(fmt(r.end), 80, y + 4.5, { size: 9 });
+      text(`${cycleData.periodDuration} days`, 150, y + 4.5, { size: 9 });
+      y += 9;
+    });
+  }
+  y += 4;
+
+  // ── PCOS ─────────────────────────────────────────────────────────────────
+  const pcosResult = assessments?.pcos?.result;
+  if (pcosResult) {
+    if (y > 230) { doc.addPage(); y = 20; }
+    text('PCOS Risk Assessment', 14, y, { size: 13, bold: true, color: pink });
+    y += 2; line(y, pink); y += 5;
+    box(14, y, half, 18);
+    text('Risk Level', 18, y + 6, { size: 8, color: muted });
+    const bandCol = pcosResult.band === 'low' ? [16, 185, 129] : pcosResult.band === 'moderate' ? [245, 158, 11] : [239, 68, 68];
+    text((pcosResult.band || '—').toUpperCase(), 18, y + 13, { size: 11, bold: true, color: bandCol });
+    box(14 + half + 4, y, half, 18);
+    text('Score', 18 + half + 4, y + 6, { size: 8, color: muted });
+    text(`${pcosResult.points ?? '—'} / ${pcosResult.maxPoints ?? '—'}`, 18 + half + 4, y + 13, { size: 11, bold: true });
+    y += 22;
+    if (pcosResult.recommendation) {
+      const lines = doc.splitTextToSize(pcosResult.recommendation, W - 28);
+      text(lines.join('\n'), 14, y, { size: 9, color: muted });
+      y += lines.length * 5 + 4;
+    }
   }
 
-  const pcosResult = assessments?.pcos?.result;
-  const bmiResult  = assessments?.bmi?.result;
+  // ── BMI ───────────────────────────────────────────────────────────────────
+  const bmiResult = assessments?.bmi?.result;
+  if (bmiResult) {
+    if (y > 230) { doc.addPage(); y = 20; }
+    text('BMI Report', 14, y, { size: 13, bold: true, color: pink });
+    y += 2; line(y, pink); y += 5;
+    box(14, y, half, 18);
+    text('BMI Value', 18, y + 6, { size: 8, color: muted });
+    text(String(bmiResult.bmi), 18, y + 13, { size: 11, bold: true });
+    box(14 + half + 4, y, half, 18);
+    text('Category', 18 + half + 4, y + 6, { size: 8, color: muted });
+    text(bmiResult.category || '—', 18 + half + 4, y + 13, { size: 11, bold: true });
+    y += 26;
+  }
+
+  // ── Mental Wellbeing ──────────────────────────────────────────────────────
   const mentalResult = assessments?.mental?.result;
+  if (mentalResult) {
+    if (y > 230) { doc.addPage(); y = 20; }
+    text('Mental Wellbeing', 14, y, { size: 13, bold: true, color: pink });
+    y += 2; line(y, pink); y += 5;
+    box(14, y, half, 18);
+    text('Risk Level', 18, y + 6, { size: 8, color: muted });
+    const mCol = mentalResult.band === 'low' ? [16, 185, 129] : mentalResult.band === 'moderate' ? [245, 158, 11] : [239, 68, 68];
+    text((mentalResult.band || '—').toUpperCase(), 18, y + 13, { size: 11, bold: true, color: mCol });
+    box(14 + half + 4, y, half, 18);
+    text('Score', 18 + half + 4, y + 6, { size: 8, color: muted });
+    text(`${mentalResult.points ?? '—'} / ${mentalResult.maxPoints ?? '—'}`, 18 + half + 4, y + 13, { size: 11, bold: true });
+    y += 26;
+  }
 
-  const bandColor = (band) => {
-    if (!band) return '#6b7280';
-    if (band === 'low') return '#10b981';
-    if (band === 'moderate') return '#f59e0b';
-    return '#ef4444';
-  };
+  // ── Footer ────────────────────────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text(
+      'This report is generated by Swasthasaheli for personal reference only. Consult a healthcare professional for medical advice.',
+      W / 2, 290, { align: 'center', maxWidth: W - 28 }
+    );
+  }
 
-  const periodRows = periods.map(p =>
-    `<tr>
-      <td>${fmt(p.start)}</td>
-      <td>${fmt(p.end)}</td>
-      <td>${cycleData.periodDuration} days</td>
-    </tr>`
-  ).join('');
-
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Health Report — ${name}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Outfit', sans-serif; color: #1f2937; background: #fff; padding: 40px; max-width: 700px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #f43f5e; padding-bottom: 16px; margin-bottom: 24px; }
-    .app-name { font-size: 1.6rem; font-weight: 700; color: #f43f5e; }
-    .report-meta { text-align: right; font-size: 0.85rem; color: #6b7280; }
-    h2 { font-size: 1.1rem; font-weight: 600; color: #1f2937; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f3f4f6; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
-    .info-box { background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-    .info-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .info-value { font-size: 1rem; font-weight: 600; color: #111827; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem; }
-    th { background: #fdf2f4; color: #be185d; font-weight: 600; padding: 8px 12px; text-align: left; }
-    td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
-    .score-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; color: white; }
-    .next-period { background: linear-gradient(135deg, #fdf2f4, #fbcfe8); border-radius: 12px; padding: 16px 20px; margin-top: 8px; }
-    .next-period-date { font-size: 1.4rem; font-weight: 700; color: #e11d48; }
-    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 0.8rem; color: #9ca3af; text-align: center; }
-    @media print {
-      body { padding: 20px; }
-      button { display: none !important; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="app-name">🌸 Swasthasaheli</div>
-      <div style="font-size:0.85rem;color:#6b7280;margin-top:4px;">Women's Health Companion</div>
-    </div>
-    <div class="report-meta">
-      <div style="font-weight:600;font-size:1rem;color:#1f2937;">Health Report</div>
-      <div>${name}</div>
-      <div>Generated: ${fmt(today)}</div>
-    </div>
-  </div>
-
-  <h2>📋 Cycle Summary</h2>
-  <div class="info-grid">
-    <div class="info-box">
-      <div class="info-label">Last Period Start</div>
-      <div class="info-value">${fmt(cycleData?.lastPeriodDate)}</div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">Cycle Length</div>
-      <div class="info-value">${cycleData?.cycleLength || '—'} days</div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">Period Duration</div>
-      <div class="info-value">${cycleData?.periodDuration || '—'} days</div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">Next Ovulation</div>
-      <div class="info-value">${fmtShort(predictions?.ovulation)}</div>
-    </div>
-  </div>
-
-  <div class="next-period">
-    <div class="info-label">Next Expected Period</div>
-    <div class="next-period-date">${fmtShort(predictions?.nextPeriod)}</div>
-    ${pcosResult?.band === 'high' || pcosResult?.band === 'moderate'
-      ? `<div style="font-size:0.82rem;color:#b45309;margin-top:4px;">⚠️ PCOS detected — actual date may vary ±7 days</div>`
-      : ''}
-  </div>
-
-  <h2>📅 Period History</h2>
-  <table>
-    <thead><tr><th>Period Start</th><th>Period End</th><th>Duration</th></tr></thead>
-    <tbody>${periodRows}</tbody>
-  </table>
-
-  ${pcosResult ? `
-  <h2>🩺 PCOS Risk Assessment</h2>
-  <div class="info-grid">
-    <div class="info-box">
-      <div class="info-label">Risk Level</div>
-      <div class="info-value">
-        <span class="score-badge" style="background:${bandColor(pcosResult.band)}">${(pcosResult.band || '—').toUpperCase()}</span>
-      </div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">Score</div>
-      <div class="info-value">${pcosResult.points ?? '—'} / ${pcosResult.maxPoints ?? '—'}</div>
-    </div>
-  </div>
-  ${pcosResult.recommendation ? `<p style="font-size:0.88rem;color:#374151;margin-top:8px;line-height:1.6;">${pcosResult.recommendation}</p>` : ''}
-  ` : ''}
-
-  ${bmiResult ? `
-  <h2>⚖️ BMI Report</h2>
-  <div class="info-grid">
-    <div class="info-box">
-      <div class="info-label">BMI</div>
-      <div class="info-value">${bmiResult.bmi}</div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">Category</div>
-      <div class="info-value">${bmiResult.category}</div>
-    </div>
-  </div>
-  ` : ''}
-
-  ${mentalResult ? `
-  <h2>🧠 Mental Wellbeing</h2>
-  <div class="info-grid">
-    <div class="info-box">
-      <div class="info-label">Risk Level</div>
-      <div class="info-value">
-        <span class="score-badge" style="background:${bandColor(mentalResult.band)}">${(mentalResult.band || '—').toUpperCase()}</span>
-      </div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">Score</div>
-      <div class="info-value">${mentalResult.points ?? '—'} / ${mentalResult.maxPoints ?? '—'}</div>
-    </div>
-  </div>
-  ` : ''}
-
-  <div class="footer">
-    This report is generated by Swasthasaheli and is for personal reference only.<br/>
-    Always consult a qualified healthcare professional for medical advice.
-  </div>
-
-  <script>window.onload = () => window.print();</script>
-</body>
-</html>`;
-
-  const win = window.open('', '_blank');
-  if (!win) { alert('Please allow popups to download your report.'); return; }
-  win.document.write(html);
-  win.document.close();
+  // ── Download directly — no popup, no print dialog ─────────────────────────
+  const filename = `swasthasaheli-report-${name.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+  doc.save(filename);
 }
