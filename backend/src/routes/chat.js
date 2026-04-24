@@ -116,6 +116,9 @@ router.post('/', protect, async (req, res) => {
   if (!message || !message.trim()) {
     return res.status(400).json({ message: 'Message is required' });
   }
+  if (message.length > 2000) {
+    return res.status(400).json({ message: 'Message too long. Please keep it under 2000 characters.' });
+  }
 
   const groqKey  = process.env.GROQ_API_KEY;
   const userName = req.user?.name || 'User';

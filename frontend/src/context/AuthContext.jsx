@@ -50,8 +50,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('userInfo');
   };
 
+  // Call this after profile edits to instantly reflect changes in the header
+  const updateUser = (updatedFields) => {
+    const updated = { ...user, ...updatedFields };
+    setUser(updated);
+    localStorage.setItem('userInfo', JSON.stringify(updated));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -7,9 +7,36 @@ import CycleCalendar from '../components/Calendar';
 import HealthCheckGrid from '../components/HealthCheckGrid';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import AIChatbot from '../components/AIChatbot';
+import ProfileModal from '../components/ProfileModal';
+import PregnancyMode from '../components/PregnancyMode';
 import { LogOut, Droplets, Sparkles, Activity, Heart, Pencil, X, Save, Baby, FileDown } from 'lucide-react';
 import { startOfDay, isWithinInterval, isSameDay } from 'date-fns';
 import { generateHealthReport } from '../utils/pdfReport';
+
+// ── Avatar bubble ─────────────────────────────────────────────────────────────
+const AvatarBubble = ({ name, onClick }) => {
+  const avatar = localStorage.getItem('profileAvatar');
+  const initials = (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return (
+    <button
+      onClick={onClick}
+      title="My Profile"
+      className="avatar-bubble"
+    >
+      {avatar
+        ? <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <span className="avatar-initials">{initials}</span>
+      }
+    </button>
+  );
+};
+
+// ── Icon-only button ──────────────────────────────────────────────────────────
+const IconBtn = ({ onClick, title, children }) => (
+  <button onClick={onClick} title={title} className="header-icon-btn">
+    {children}
+  </button>
+);
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -21,23 +48,24 @@ const Dashboard = () => {
   const [assessments, setAssessments] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Edit Cycle Modal
+  const [showProfile, setShowProfile] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ cycleLength: 28, periodDuration: 5, lastPeriodDate: '' });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState(false);
 
-  // Pregnancy Mode
   const [pregnancyMode, setPregnancyMode] = useState(
     () => localStorage.getItem('pregnancyMode') === 'true'
   );
 
-  const togglePregnancyMode = () => {
-    const next = !pregnancyMode;
-    setPregnancyMode(next);
-    localStorage.setItem('pregnancyMode', String(next));
-  };
+  // PCOS period window confirmation
+  const [pcosBannerDate, setPcosBannerDate] = useState(
+    () => new Date().toISOString().split('T')[0]
+  );
+  const [pcosBannerLoading, setPcosBannerLoading] = useState(false);
+  const [pcosBannerDone, setPcosBannerDone] = useState(false);
+  const [showPcosDatePicker, setShowPcosDatePicker] = useState(false);
 
   const config = { headers: { Authorization: `Bearer ${user.token}` } };
 
@@ -93,14 +121,48 @@ const Dashboard = () => {
     } finally { setEditLoading(false); }
   };
 
+  const togglePregnancyMode = () => {
+    const next = !pregnancyMode;
+    setPregnancyMode(next);
+    localStorage.setItem('pregnancyMode', String(next));
+    if (!next) localStorage.removeItem('pregnancyDueDate');
+  };
+
+  // PCOS: user confirms their actual period start date
+  const handlePcosDateConfirm = async () => {
+    if (!pcosBannerDate) return;
+    setPcosBannerLoading(true);
+    try {
+      await axios.post('/api/cycle', {
+        cycleLength: cycleData.cycleLength,
+        periodDuration: cycleData.periodDuration,
+        lastPeriodDate: pcosBannerDate,
+      }, config);
+      // Mark as done for this prediction window
+      const key = `pcosLogged_${predictions.nextPeriod?.split('T')[0]}`;
+      localStorage.setItem(key, 'true');
+      setPcosBannerDone(true);
+      setLoading(true);
+      fetchAll();
+    } catch {
+      // silently fail — user can still use Update Date button
+    } finally {
+      setPcosBannerLoading(false);
+    }
+  };
+
+  const dismissPcosBanner = () => {
+    const key = `pcosLogged_${predictions?.nextPeriod?.split('T')[0]}`;
+    localStorage.setItem(key, 'true');
+    setPcosBannerDone(true);
+  };
+
   if (loading) return <div className="auth-container"><h2>{t('dash.loading')}</h2></div>;
   if (!cycleData || !predictions) return null;
 
-  // PCOS check — show range if high/moderate band
   const pcosResult = assessments?.pcos?.result;
   const pcosHigh = pcosResult?.band === 'high' || pcosResult?.band === 'moderate';
 
-  // Phase detection
   const today = startOfDay(new Date());
   let currentPhase = t('phase.luteal');
   let phaseIcon = <Activity color="#a78bfa" size={32} />;
@@ -134,79 +196,62 @@ const Dashboard = () => {
   const nextPeriodDate = new Date(predictions.nextPeriod);
   const daysUntilPeriod = Math.ceil((nextPeriodDate - today) / (1000 * 60 * 60 * 24));
   const fmt = (d, opts) => new Date(d).toLocaleDateString(undefined, opts || { month: 'short', day: 'numeric' });
-
-  // PCOS: show ±7 day range
   const nextPeriodDisplay = pcosHigh
     ? `${fmt(new Date(nextPeriodDate.getTime() - 7 * 86400000))} – ${fmt(new Date(nextPeriodDate.getTime() + 7 * 86400000))}`
     : fmt(nextPeriodDate);
-
   const ovulationFormatted = fmt(predictions.ovulation);
 
-  // Pregnancy mode guide cards
-  const pregnancyTips = [
-    { emoji: '🥗', title: 'Nutrition', desc: 'Eat iron-rich foods, folate, calcium. Small frequent meals help with nausea.' },
-    { emoji: '😴', title: 'Sleep', desc: 'Sleep on your left side after 20 weeks. Use a pillow between your knees.' },
-    { emoji: '🚶', title: 'Exercise', desc: 'Gentle walking 30 min/day is great. Avoid heavy lifting and high-impact sports.' },
-    { emoji: '🧘', title: 'Mental Wellness', desc: 'Pregnancy mood swings are normal. Try prenatal yoga, breathing exercises.' },
-    { emoji: '💊', title: 'Supplements', desc: 'Take folic acid 400mcg/day, Vitamin D, and iron as prescribed.' },
-    { emoji: '🏥', title: 'Doctor Visits', desc: 'Schedule prenatal checkups monthly (1st & 2nd trimester), then every 2 weeks.' },
-  ];
+  // PCOS window: is today within nextPeriod ±7 days?
+  const pcosWindowStartISO = new Date(nextPeriodDate.getTime() - 7 * 86400000).toISOString().split('T')[0];
+  const pcosWindowEndISO   = new Date(nextPeriodDate.getTime() + 7 * 86400000).toISOString().split('T')[0];
+  const pcosWindowStart    = startOfDay(new Date(nextPeriodDate.getTime() - 7 * 86400000));
+  const pcosWindowEnd      = startOfDay(new Date(nextPeriodDate.getTime() + 7 * 86400000));
+  const inPcosWindow = pcosHigh && today >= pcosWindowStart && today <= pcosWindowEnd && !predictions.isOnPeriod;
+  const pcosWindowKey = `pcosLogged_${predictions.nextPeriod?.split('T')[0]}`;
+  const pcosAlreadyLogged = localStorage.getItem(pcosWindowKey) === 'true';
+  const showPcosButton = inPcosWindow && !pcosAlreadyLogged && !pcosBannerDone;
 
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <div>
-          <h1>{t('dash.hi')}, {user?.name?.split(' ')?.[0] ?? 'there'} 👋</h1>
-          <p className="text-muted" style={{ margin: 0 }}>{t('dash.welcome')}</p>
+        {/* Left: Avatar + Greeting */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <AvatarBubble name={user?.name} onClick={() => setShowProfile(true)} />
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.6rem' }}>
+              {t('dash.hi')}, {user?.name?.split(' ')?.[0] ?? 'there'} 👋
+            </h1>
+            <p className="text-muted" style={{ margin: 0, fontSize: '0.88rem' }}>
+              {t('dash.welcome')}
+            </p>
+          </div>
         </div>
+
+        {/* Right: Compact Actions */}
         <div className="dashboard-header-actions">
           <LanguageSwitcher />
-          {/* Pregnancy Mode Toggle */}
           <button
             onClick={togglePregnancyMode}
-            className={`btn ${pregnancyMode ? 'btn-pregnancy-active' : 'btn-outline'}`}
-            style={{ width: 'auto', gap: '6px' }}
             title={pregnancyMode ? 'Exit Pregnancy Mode' : 'Enable Pregnancy Mode'}
+            className={`header-pill-btn ${pregnancyMode ? 'header-pill-active' : ''}`}
           >
-            <Baby size={15} />
-            {pregnancyMode ? '🤰 Pregnancy Mode' : 'Pregnancy Mode'}
+            <Baby size={14} />
+            <span>{pregnancyMode ? 'Pregnancy ✓' : 'Pregnancy'}</span>
           </button>
-          <button onClick={openEditModal} className="btn btn-outline" style={{ width: 'auto' }} title="Update your cycle date">
-            <Pencil size={15} style={{ marginRight: '6px' }} /> Update Date
-          </button>
-          <button onClick={logout} className="btn btn-outline" style={{ width: 'auto' }}>
-            <LogOut size={16} style={{ marginRight: '8px' }} /> {t('dash.logout')}
-          </button>
+          <IconBtn onClick={openEditModal} title="Update period date">
+            <Pencil size={16} />
+          </IconBtn>
+          <IconBtn onClick={logout} title="Logout">
+            <LogOut size={16} />
+          </IconBtn>
         </div>
       </header>
 
-      {/* ── PREGNANCY MODE ─────────────────────────────────────────────────── */}
+      {/* ── PREGNANCY MODE ───────────────────────────────────────────────── */}
       {pregnancyMode ? (
-        <>
-          <div className="pregnancy-mode-banner">
-            <span style={{ fontSize: '2.5rem' }}>🤰</span>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#be185d' }}>Pregnancy Mode Active</h2>
-              <p style={{ margin: 0, color: '#9d174d', fontSize: '0.95rem' }}>
-                Period tracking is paused. Here's your pregnancy wellness guide.
-              </p>
-            </div>
-          </div>
-          <div className="grid-cols-2" style={{ gap: '1rem' }}>
-            {pregnancyTips.map(tip => (
-              <div key={tip.title} className="dashboard-card" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '2rem', flexShrink: 0 }}>{tip.emoji}</span>
-                <div>
-                  <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.05rem' }}>{tip.title}</h3>
-                  <p className="text-muted" style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5 }}>{tip.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
+        <PregnancyMode onExit={togglePregnancyMode} />
       ) : (
         <>
-          {/* Current Phase Card */}
           <div className="dashboard-card phase-hero">
             <div className="phase-hero-icon">{phaseIcon}</div>
             <div className="phase-hero-content">
@@ -217,18 +262,55 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Prediction Cards */}
           <div className="grid-cols-2">
             <div className="dashboard-card prediction-card">
               <div className="prediction-icon-wrap" style={{ background: 'rgba(231, 76, 111, 0.1)' }}>
                 <Droplets size={20} color="#e74c6f" />
               </div>
               <h3 className="text-muted" style={{ marginBottom: '0.25rem' }}>{t('dash.nextPeriod')}</h3>
-              <p className="prediction-date" style={{ color: '#e74c6f', fontSize: pcosHigh ? '1.1rem' : undefined }}>{nextPeriodDisplay}</p>
+              <p className="prediction-date" style={{ color: '#e74c6f', fontSize: pcosHigh ? '1.05rem' : undefined }}>{nextPeriodDisplay}</p>
               {pcosHigh
                 ? <span className="prediction-countdown" style={{ color: '#f59e0b' }}>⚠️ PCOS range estimate</span>
                 : <span className="prediction-countdown">{daysUntilPeriod} {daysUntilPeriod !== 1 ? t('dash.daysAway') : t('dash.dayAway')}</span>
               }
+
+              {/* ─ PCOS Start Date Button ─ only active inside the ±7-day window ─ */}
+              {showPcosButton && !showPcosDatePicker && (
+                <button
+                  className="pcos-start-btn"
+                  onClick={() => setShowPcosDatePicker(true)}
+                >
+                  🩸 Period started? Set date
+                </button>
+              )}
+
+              {showPcosButton && showPcosDatePicker && (
+                <div className="pcos-inline-picker">
+                  <input
+                    type="date"
+                    className="pcos-date-input"
+                    value={pcosBannerDate}
+                    min={pcosWindowStartISO}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={e => setPcosBannerDate(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button
+                      className="pcos-confirm-btn"
+                      onClick={handlePcosDateConfirm}
+                      disabled={pcosBannerLoading}
+                    >
+                      {pcosBannerLoading ? 'Saving…' : '✓ Confirm'}
+                    </button>
+                    <button
+                      className="pcos-dismiss-btn"
+                      onClick={() => setShowPcosDatePicker(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="dashboard-card prediction-card">
               <div className="prediction-icon-wrap" style={{ background: 'rgba(91, 141, 239, 0.1)' }}>
@@ -239,32 +321,28 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Calendar */}
           <div className="dashboard-card" style={{ padding: '2rem' }}>
             <h2 style={{ marginBottom: '1rem' }}>{t('dash.cycleCalendar')}</h2>
             <CycleCalendar cycleData={cycleData} predictions={predictions} />
           </div>
 
-          {/* Health Check-up Cards */}
           <HealthCheckGrid cycleData={cycleData} />
 
-          {/* Download Report */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              className="btn btn-outline"
-              style={{ width: 'auto', gap: '8px' }}
-              onClick={() => generateHealthReport({ user, cycleData, predictions, assessments })}
-            >
-              <FileDown size={16} /> Download Health Report (PDF)
+            <button className="btn btn-outline" style={{ width: 'auto', gap: '8px' }}
+              onClick={() => generateHealthReport({ user, cycleData, predictions, assessments })}>
+              <FileDown size={16} /> Download Health Report
             </button>
           </div>
         </>
       )}
 
-      {/* AI Chatbot — always visible */}
       <AIChatbot cycleData={{ cycle: cycleData, predictions }} />
 
-      {/* ── Edit Cycle Modal ──────────────────────────────────────────────── */}
+      {/* Profile Modal */}
+      {showProfile && <ProfileModal user={user} onClose={() => setShowProfile(false)} />}
+
+      {/* Edit Cycle Modal */}
       {showEditModal && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
@@ -273,7 +351,7 @@ const Dashboard = () => {
               <button className="modal-close-btn" onClick={() => setShowEditModal(false)}><X size={20} /></button>
             </div>
             <p className="text-muted" style={{ marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-              Changed your period date or made a mistake? Update here — predictions will recalculate instantly.
+              Changed your period date or made a mistake? Predictions recalculate instantly.
             </p>
             {editError && <div className="error-message">{editError}</div>}
             {editSuccess && (

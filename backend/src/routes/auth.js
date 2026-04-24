@@ -10,27 +10,41 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
+// Email validation helper
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 // @route   POST /api/auth/register
 router.post('/register', async (req, res) => {
   const { name, email, password, language } = req.body;
 
-  // Input validation
   if (!name?.trim() || !email?.trim() || !password) {
-    return res.status(400).json({ message: 'Name, email and password are required' });
+    return res.status(400).json({ message: 'Name, email and password are required.' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters' });
+  if (!isValidEmail(email.trim())) {
+    return res.status(400).json({ message: 'Please enter a valid email address.' });
+  }
+  if (name.trim().length < 2 || name.trim().length > 60) {
+    return res.status(400).json({ message: 'Name must be between 2 and 60 characters.' });
+  }
+  if (password.length < 6 || password.length > 128) {
+    return res.status(400).json({ message: 'Password must be between 6 and 128 characters.' });
   }
 
   try {
     const userExists = await findByEmail(email);
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'An account with this email already exists.' });
     }
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12); // 12 rounds for production security
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await createUser({ name: name.trim(), email, password: hashedPassword, language: language || 'en' });
+    const user = await createUser({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashedPassword,
+      language: ['en', 'hi', 'bn'].includes(language) ? language : 'en',
+    });
+
     if (user) {
       res.status(201).json({
         _id: user._id,
@@ -40,10 +54,11 @@ router.post('/register', async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
-      res.status(400).json({ message: 'Invalid user data' });
+      res.status(400).json({ message: 'Registration failed. Please try again.' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('[REGISTER ERROR]', error.message);
+    res.status(500).json({ message: 'Registration failed. Please try again.' });
   }
 });
 
@@ -52,7 +67,7 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email?.trim() || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
+    return res.status(400).json({ message: 'Email and password are required.' });
   }
 
   try {
@@ -66,10 +81,12 @@ router.post('/login', async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      // Same message for wrong email OR wrong password (prevents user enumeration)
+      res.status(401).json({ message: 'Invalid email or password.' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('[LOGIN ERROR]', error.message);
+    res.status(500).json({ message: 'Login failed. Please try again.' });
   }
 });
 
@@ -77,11 +94,12 @@ router.post('/login', async (req, res) => {
 router.get('/profile', protect, async (req, res) => {
   try {
     const user = await findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: 'User not found.' });
     const { password: _, ...safeUser } = user;
     res.json(safeUser);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('[PROFILE ERROR]', error.message);
+    res.status(500).json({ message: 'Could not fetch profile.' });
   }
 });
 
