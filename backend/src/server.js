@@ -36,14 +36,16 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: (origin, cb) => {
-    // In production, always require origin
-    if (!origin) {
-      const isProd = process.env.NODE_ENV === 'production';
-      if (isProd) return cb(new Error('CORS: direct API access not allowed in production'));
-      return cb(null, true); // Allow tools like Postman in dev
+    // Allow requests with no origin (server-to-server, Vercel proxy, mobile apps)
+    if (!origin) return cb(null, true);
+    // Allow localhost in dev and the deployed Vercel frontend
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') // covers all Vercel preview URLs
+    ) {
+      return cb(null, true);
     }
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    cb(new Error(`CORS: origin not allowed`));
   },
   credentials: true,
 }));
