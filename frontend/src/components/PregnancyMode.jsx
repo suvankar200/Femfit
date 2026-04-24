@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Apple, Heart, FlaskConical, Pill, Bed, Dumbbell, Brain, Phone, ChevronDown, ChevronUp } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { Apple, Heart, FlaskConical, Phone, ChevronDown, ChevronUp } from 'lucide-react';
 
 // ── Baby size by week ─────────────────────────────────────────────────────────
 const BABY_SIZE = {
@@ -107,6 +108,7 @@ const getTrimester = (week) => {
 // ── Component ─────────────────────────────────────────────────────────────────
 const PregnancyMode = ({ onExit }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [dueDate, setDueDate] = useState(() => localStorage.getItem('pregnancyDueDate') || '');
@@ -125,7 +127,7 @@ const PregnancyMode = ({ onExit }) => {
     }
   };
 
-  const trimesterLabel = trimester === 1 ? '1st Trimester' : trimester === 2 ? '2nd Trimester' : '3rd Trimester';
+  const trimesterLabel = trimester === 1 ? t('preg.trimester1') : trimester === 2 ? t('preg.trimester2') : t('preg.trimester3');
   const trimesterColor = trimester === 1 ? '#ec4899' : trimester === 2 ? '#8b5cf6' : '#f59e0b';
 
   const toggle = (s) => setOpenSection(p => p === s ? '' : s);
@@ -138,27 +140,27 @@ const PregnancyMode = ({ onExit }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '2.5rem' }}>🤰</span>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#be185d' }}>Pregnancy Mode</h2>
-            <p style={{ margin: 0, color: '#9d174d', fontSize: '0.9rem' }}>Period tracking paused. Your pregnancy companion is active.</p>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#be185d' }}>{t('preg.title')}</h2>
+            <p style={{ margin: 0, color: '#9d174d', fontSize: '0.9rem' }}>{t('preg.subtitle')}</p>
           </div>
         </div>
         <button className="btn btn-outline" style={{ width: 'auto', fontSize: '0.85rem' }} onClick={onExit}>
-          Exit Pregnancy Mode
+          {t('preg.exit')}
         </button>
       </div>
 
       {/* Due Date Setup */}
       {showDueDateForm ? (
         <div className="dashboard-card" style={{ padding: '2rem', textAlign: 'center' }}>
-          <h2 style={{ marginBottom: '0.5rem' }}>📅 Enter Your Due Date</h2>
-          <p className="text-muted" style={{ marginBottom: '1.5rem' }}>We'll personalise your weekly guide based on your due date.</p>
+          <h2 style={{ marginBottom: '0.5rem' }}>📅 {t('preg.enterDueDate')}</h2>
+          <p className="text-muted" style={{ marginBottom: '1.5rem' }}>{t('preg.dueDateDesc')}</p>
           <form onSubmit={saveDueDate} style={{ maxWidth: '300px', margin: '0 auto' }}>
             <input type="date" className="form-control" value={dueDate}
               onChange={e => setDueDate(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
               max={new Date(Date.now() + 280 * 86400000).toISOString().split('T')[0]}
               required style={{ marginBottom: '1rem' }} />
-            <button type="submit" className="btn">Set Due Date</button>
+            <button type="submit" className="btn">{t('preg.setDueDate')}</button>
           </form>
         </div>
       ) : (
@@ -166,31 +168,31 @@ const PregnancyMode = ({ onExit }) => {
           {/* Week & Baby Size Card */}
           <div className="grid-cols-2">
             <div className="dashboard-card" style={{ padding: '1.75rem', textAlign: 'center' }}>
-              <p className="text-muted" style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '1px' }}>You Are</p>
-              <div style={{ fontSize: '3.5rem', fontWeight: 700, color: trimesterColor, lineHeight: 1 }}>Week {week}</div>
+              <p className="text-muted" style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('preg.youAre')}</p>
+              <div style={{ fontSize: '3.5rem', fontWeight: 700, color: trimesterColor, lineHeight: 1 }}>{t('preg.week')} {week}</div>
               <div style={{ marginTop: '0.5rem', display: 'inline-block', background: `${trimesterColor}20`, color: trimesterColor, padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600 }}>
                 {trimesterLabel}
               </div>
               <p className="text-muted" style={{ margin: '1rem 0 0', fontSize: '0.85rem' }}>
-                {dueDate && `Due: ${new Date(dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                {dueDate && `${t('preg.due')} ${new Date(dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`}
               </p>
               <button onClick={() => setShowDueDateForm(true)} style={{ marginTop: '0.5rem', background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.82rem', cursor: 'pointer' }}>
-                ✏️ Change due date
+                {t('preg.changeDueDate')}
               </button>
             </div>
 
             <div className="dashboard-card" style={{ padding: '1.75rem', textAlign: 'center' }}>
-              <p className="text-muted" style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Baby is the size of a</p>
+              <p className="text-muted" style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('preg.babySize')}</p>
               <div style={{ fontSize: '2.8rem', margin: '0.25rem 0' }}>🌱</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937' }}>{babyInfo?.[0]}</div>
-              <div style={{ color: 'var(--text-muted)', marginTop: '0.25rem', fontSize: '0.9rem' }}>~{babyInfo?.[1]} long</div>
+              <div style={{ color: 'var(--text-muted)', marginTop: '0.25rem', fontSize: '0.9rem' }}>~{babyInfo?.[1]} {t('preg.long')}</div>
             </div>
           </div>
 
           {/* Accordion Sections */}
           {[
             {
-              id: 'wellness', label: '🧘 Wellness & Tips', icon: <Heart size={18} />,
+              id: 'wellness', label: t('preg.wellness'), icon: <Heart size={18} />,
               content: (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem', padding: '1rem 0 0' }}>
                   {(WELLNESS[trimester] || WELLNESS[2]).map(item => (
@@ -204,11 +206,11 @@ const PregnancyMode = ({ onExit }) => {
               )
             },
             {
-              id: 'tests', label: '🧪 Tests This Trimester', icon: <FlaskConical size={18} />,
+              id: 'tests', label: t('preg.tests'), icon: <FlaskConical size={18} />,
               content: (
                 <div style={{ padding: '1rem 0 0' }}>
                   <p className="text-muted" style={{ fontSize: '0.88rem', marginBottom: '1rem' }}>
-                    These tests are recommended for your {trimesterLabel}. Always confirm with your doctor.
+                    {trimesterLabel} — {t('preg.testsNote')}
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {(TESTS[trimester] || TESTS[2]).map(test => (
@@ -226,18 +228,18 @@ const PregnancyMode = ({ onExit }) => {
                     style={{ marginTop: '1.25rem', background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }}
                     onClick={() => navigate('/tests')}
                   >
-                    📋 Book These Tests — Doyen Diagnostics
+                    {t('preg.bookTests')}
                   </button>
                 </div>
               )
             },
             {
-              id: 'nutrition', label: '🥗 Nutrition Guide', icon: <Apple size={18} />,
+              id: 'nutrition', label: t('preg.nutrition'), icon: <Apple size={18} />,
               content: (
                 <div style={{ padding: '1rem 0 0' }}>
                   {trimester && <>
                     <div style={{ marginBottom: '1.25rem' }}>
-                      <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: '#16a34a' }}>✅ Eat More Of</h3>
+                      <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: '#16a34a' }}>{t('preg.eatMore')}</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {NUTRITION[trimester].eat.map(item => (
                           <div key={item} style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.9rem' }}>
@@ -248,7 +250,7 @@ const PregnancyMode = ({ onExit }) => {
                       </div>
                     </div>
                     <div style={{ marginBottom: '1.25rem' }}>
-                      <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: '#dc2626' }}>❌ Avoid</h3>
+                      <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: '#dc2626' }}>{t('preg.avoid')}</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {NUTRITION[trimester].avoid.map(item => (
                           <div key={item} style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.9rem' }}>
@@ -259,7 +261,7 @@ const PregnancyMode = ({ onExit }) => {
                       </div>
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: '#7c3aed' }}>💊 Supplements</h3>
+                      <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: '#7c3aed' }}>{t('preg.supplements')}</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {NUTRITION[trimester].supplements.map(item => (
                           <div key={item} style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.9rem' }}>
@@ -274,11 +276,11 @@ const PregnancyMode = ({ onExit }) => {
               )
             },
             {
-              id: 'emergency', label: '🚨 When to Call Doctor', icon: <Phone size={18} />,
+              id: 'emergency', label: t('preg.emergency'), icon: <Phone size={18} />,
               content: (
                 <div style={{ padding: '1rem 0 0' }}>
                   <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '1.25rem' }}>
-                    <p style={{ fontWeight: 600, color: '#dc2626', marginBottom: '0.75rem' }}>Call your doctor immediately if you notice:</p>
+                    <p style={{ fontWeight: 600, color: '#dc2626', marginBottom: '0.75rem' }}>{t('preg.callIf')}</p>
                     {['Heavy vaginal bleeding', 'Severe abdominal pain or cramping', 'Baby not moving (after week 20)', 'Sudden severe headache or blurred vision', 'Facial/hand swelling (signs of preeclampsia)', 'Fever above 38°C', 'Painful or burning urination', 'Signs of preterm labor before week 37 (contractions, pelvic pressure)'].map(s => (
                       <div key={s} style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
                         <span style={{ color: '#dc2626' }}>⚠️</span> <span>{s}</span>
@@ -286,7 +288,7 @@ const PregnancyMode = ({ onExit }) => {
                     ))}
                   </div>
                   <p className="text-muted" style={{ fontSize: '0.82rem', marginTop: '1rem', textAlign: 'center' }}>
-                    Emergency: Contact Doyen Diagnostics — doyendiagnostickol@gmail.com
+                    {t('preg.emergency.contact')}
                   </p>
                 </div>
               )

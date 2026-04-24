@@ -32,7 +32,7 @@ const IconBtn = ({ onClick, title, children }) => (
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const [cycleData, setCycleData] = useState(null);
@@ -322,7 +322,7 @@ const Dashboard = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <button className="btn btn-outline" style={{ width: 'auto', gap: '8px' }}
-              onClick={() => generateHealthReport({ user, cycleData, predictions, assessments })}>
+              onClick={() => generateHealthReport({ user, cycleData, predictions, assessments, language })}>
               <FileDown size={16} /> Download Health Report
             </button>
           </div>

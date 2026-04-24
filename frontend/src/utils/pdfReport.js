@@ -1,10 +1,14 @@
 import jsPDF from 'jspdf';
+import { translations } from '../i18n/index.js';
 
 /**
  * generateHealthReport
- * Directly downloads a PDF — no popups, no print dialog.
+ * Directly downloads a PDF in the user's selected language.
  */
-export function generateHealthReport({ user, cycleData, assessments, predictions }) {
+export function generateHealthReport({ user, cycleData, assessments, predictions, language = 'en' }) {
+  const dict = translations[language] || translations.en;
+  const tl = (key) => dict[key] || translations.en[key] || key;
+
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const name = user?.name || 'User';
   const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -43,47 +47,59 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
 
   // ── Header ────────────────────────────────────────────────────────────────
   doc.setFillColor(...pink);
-  doc.rect(0, 0, W, 22, 'F');
-  text('🌸 Swasthasaheli', 14, 9, { size: 16, bold: true, color: [255, 255, 255] });
-  text("Women's Health Report", 14, 16, { size: 9, color: [255, 200, 210] });
-  text(name, W - 14, 9, { size: 11, bold: true, color: [255, 255, 255] });
+  doc.rect(0, 0, W, 26, 'F');
+
+  // Left side — App name + patient name
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 200, 210);
+  doc.text('Swasthasaheli', 14, 9);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
+  // Use splitTextToSize to prevent name from being cut off
+  const nameLines = doc.splitTextToSize(`${tl('pdf.patient')} ${name}`, 110);
+  doc.text(nameLines, 14, 17);
+
+  // Right side — Femfit brand
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text('Femfit', W - 14, 12, { align: 'right' });
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(255, 200, 210);
-  doc.text(`Generated: ${today}`, W - 14, 16, { align: 'right' });
+  doc.text(`${tl('pdf.generated')} ${today}`, W - 14, 20, { align: 'right' });
 
-  y = 32;
+  y = 36;
 
   // ── Cycle Summary ─────────────────────────────────────────────────────────
-  text('Cycle Summary', 14, y, { size: 13, bold: true, color: pink });
+  text(tl('pdf.cycleSummary'), 14, y, { size: 13, bold: true, color: pink });
   y += 2;
   line(y, pink);
   y += 5;
 
   const half = (W - 28 - 4) / 2;
-  // Box 1
   box(14, y, half, 18);
-  text('Last Period', 18, y + 6, { size: 8, color: muted });
+  text(tl('pdf.lastPeriod'), 18, y + 6, { size: 8, color: muted });
   text(fmtShort(cycleData?.lastPeriodDate), 18, y + 13, { size: 11, bold: true });
-  // Box 2
   box(14 + half + 4, y, half, 18);
-  text('Cycle Length', 18 + half + 4, y + 6, { size: 8, color: muted });
+  text(tl('pdf.cycleLength'), 18 + half + 4, y + 6, { size: 8, color: muted });
   text(`${cycleData?.cycleLength || '—'} days`, 18 + half + 4, y + 13, { size: 11, bold: true });
   y += 22;
 
-  // Box 3
   box(14, y, half, 18);
-  text('Period Duration', 18, y + 6, { size: 8, color: muted });
+  text(tl('pdf.periodDuration'), 18, y + 6, { size: 8, color: muted });
   text(`${cycleData?.periodDuration || '—'} days`, 18, y + 13, { size: 11, bold: true });
-  // Box 4
   box(14 + half + 4, y, half, 18);
-  text('Next Ovulation', 18 + half + 4, y + 6, { size: 8, color: muted });
+  text(tl('pdf.nextOvulation'), 18 + half + 4, y + 6, { size: 8, color: muted });
   text(fmtShort(predictions?.ovulation), 18 + half + 4, y + 13, { size: 11, bold: true });
   y += 22;
 
-  // Next period highlight
   box(14, y, W - 28, 20, [254, 226, 226]);
-  text('Next Expected Period', 18, y + 6, { size: 8, color: muted });
+  text(tl('pdf.nextPeriod'), 18, y + 6, { size: 8, color: muted });
   text(fmt(predictions?.nextPeriod), 18, y + 14, { size: 14, bold: true, color: [225, 29, 72] });
   y += 26;
 
@@ -95,9 +111,9 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
 
   // Table header
   box(14, y, W - 28, 8, [253, 242, 244]);
-  text('Period Start', 18, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
-  text('Period End', 80, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
-  text('Duration', 150, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
+  text(tl('pdf.periodStart'), 18, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
+  text(tl('pdf.periodEnd'), 80, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
+  text(tl('pdf.duration'), 150, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
   y += 10;
 
   if (cycleData?.lastPeriodDate && cycleData?.cycleLength) {
@@ -124,14 +140,14 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
   const pcosResult = assessments?.pcos?.result;
   if (pcosResult) {
     if (y > 230) { doc.addPage(); y = 20; }
-    text('PCOS Risk Assessment', 14, y, { size: 13, bold: true, color: pink });
+    text(tl('pdf.pcosRisk'), 14, y, { size: 13, bold: true, color: pink });
     y += 2; line(y, pink); y += 5;
     box(14, y, half, 18);
-    text('Risk Level', 18, y + 6, { size: 8, color: muted });
+    text(tl('pdf.riskLevel'), 18, y + 6, { size: 8, color: muted });
     const bandCol = pcosResult.band === 'low' ? [16, 185, 129] : pcosResult.band === 'moderate' ? [245, 158, 11] : [239, 68, 68];
     text((pcosResult.band || '—').toUpperCase(), 18, y + 13, { size: 11, bold: true, color: bandCol });
     box(14 + half + 4, y, half, 18);
-    text('Score', 18 + half + 4, y + 6, { size: 8, color: muted });
+    text(tl('pdf.score'), 18 + half + 4, y + 6, { size: 8, color: muted });
     text(`${pcosResult.points ?? '—'} / ${pcosResult.maxPoints ?? '—'}`, 18 + half + 4, y + 13, { size: 11, bold: true });
     y += 22;
     if (pcosResult.recommendation) {
@@ -145,13 +161,13 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
   const bmiResult = assessments?.bmi?.result;
   if (bmiResult) {
     if (y > 230) { doc.addPage(); y = 20; }
-    text('BMI Report', 14, y, { size: 13, bold: true, color: pink });
+    text(tl('pdf.bmiReport'), 14, y, { size: 13, bold: true, color: pink });
     y += 2; line(y, pink); y += 5;
     box(14, y, half, 18);
-    text('BMI Value', 18, y + 6, { size: 8, color: muted });
+    text(tl('pdf.bmiValue'), 18, y + 6, { size: 8, color: muted });
     text(String(bmiResult.bmi), 18, y + 13, { size: 11, bold: true });
     box(14 + half + 4, y, half, 18);
-    text('Category', 18 + half + 4, y + 6, { size: 8, color: muted });
+    text(tl('pdf.category'), 18 + half + 4, y + 6, { size: 8, color: muted });
     text(bmiResult.category || '—', 18 + half + 4, y + 13, { size: 11, bold: true });
     y += 26;
   }
@@ -160,14 +176,14 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
   const mentalResult = assessments?.mental?.result;
   if (mentalResult) {
     if (y > 230) { doc.addPage(); y = 20; }
-    text('Mental Wellbeing', 14, y, { size: 13, bold: true, color: pink });
+    text(tl('pdf.mentalWellbeing'), 14, y, { size: 13, bold: true, color: pink });
     y += 2; line(y, pink); y += 5;
     box(14, y, half, 18);
-    text('Risk Level', 18, y + 6, { size: 8, color: muted });
+    text(tl('pdf.riskLevel'), 18, y + 6, { size: 8, color: muted });
     const mCol = mentalResult.band === 'low' ? [16, 185, 129] : mentalResult.band === 'moderate' ? [245, 158, 11] : [239, 68, 68];
     text((mentalResult.band || '—').toUpperCase(), 18, y + 13, { size: 11, bold: true, color: mCol });
     box(14 + half + 4, y, half, 18);
-    text('Score', 18 + half + 4, y + 6, { size: 8, color: muted });
+    text(tl('pdf.score'), 18 + half + 4, y + 6, { size: 8, color: muted });
     text(`${mentalResult.points ?? '—'} / ${mentalResult.maxPoints ?? '—'}`, 18 + half + 4, y + 13, { size: 11, bold: true });
     y += 26;
   }
@@ -179,7 +195,7 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
     doc.setFontSize(7.5);
     doc.setTextColor(...muted);
     doc.text(
-      'This report is generated by Swasthasaheli for personal reference only. Consult a healthcare professional for medical advice.',
+      tl('pdf.disclaimer'),
       W / 2, 290, { align: 'center', maxWidth: W - 28 }
     );
   }
