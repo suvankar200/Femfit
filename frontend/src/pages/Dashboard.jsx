@@ -47,6 +47,8 @@ const Dashboard = () => {
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState(false);
 
+  const [downloadingReport, setDownloadingReport] = useState(false);
+
   const [pregnancyMode, setPregnancyMode] = useState(
     () => localStorage.getItem('pregnancyMode') === 'true'
   );
@@ -322,8 +324,16 @@ const Dashboard = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <button className="btn btn-outline" style={{ width: 'auto', gap: '8px' }}
-              onClick={() => generateHealthReport({ user, cycleData, predictions, assessments, language })}>
-              <FileDown size={16} /> Download Health Report
+              disabled={downloadingReport}
+              onClick={async () => {
+                setDownloadingReport(true);
+                try {
+                  await generateHealthReport({ user, cycleData, predictions, assessments, language });
+                } finally {
+                  setDownloadingReport(false);
+                }
+              }}>
+              <FileDown size={16} /> {downloadingReport ? 'Generating…' : 'Download Health Report'}
             </button>
           </div>
         </>

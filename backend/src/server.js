@@ -34,13 +34,20 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL, 'http://localhost:5173']
   : ['http://localhost:5173'];
 
+const mobileOrigins = [
+  'http://localhost',
+  'https://localhost',
+  'capacitor://localhost'
+];
+
 app.use(cors({
   origin: (origin, cb) => {
     // Allow requests with no origin (server-to-server, Vercel proxy, mobile apps)
     if (!origin) return cb(null, true);
-    // Allow localhost in dev and the deployed Vercel frontend
+    // Allow localhost in dev, the deployed Vercel frontend, and mobile webviews
     if (
       allowedOrigins.includes(origin) ||
+      mobileOrigins.includes(origin) ||
       origin.endsWith('.vercel.app') // covers all Vercel preview URLs
     ) {
       return cb(null, true);

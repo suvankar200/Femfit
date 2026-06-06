@@ -1,16 +1,22 @@
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { translations } from '../i18n/index.js';
 
 /**
  * generateHealthReport
- * Directly downloads a PDF in the user's selected language.
+ * All languages → renders a styled HTML div using html2canvas,
+ * then saves it directly as a PDF download (no print dialog).
+ *
+ * Why html2canvas for Hindi/Bengali?
+ *   jsPDF's built-in Helvetica has NO Devanagari or Bengali glyphs.
+ *   html2canvas lets the browser render text with the correct Unicode font,
+ *   then snapshots it as an image that jsPDF embeds into the PDF.
  */
-export function generateHealthReport({ user, cycleData, assessments, predictions, language = 'en' }) {
+export async function generateHealthReport({ user, cycleData, assessments, predictions, language = 'en' }) {
   const dict = translations[language] || translations.en;
   const tl = (key) => dict[key] || translations.en[key] || key;
 
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const name = user?.name || 'User';
+  const name  = user?.name || 'User';
   const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const fmt = (d) =>
@@ -18,104 +24,8 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
   const fmtShort = (d) =>
     d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
 
-  const W = 210; // A4 width mm
-  let y = 0;
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const pink   = [244, 63, 94];
-  const dark   = [31, 41, 55];
-  const muted  = [107, 114, 128];
-  const lightBg = [253, 242, 244];
-
-  const text = (str, x, yy, opts = {}) => {
-    doc.setFontSize(opts.size || 11);
-    doc.setTextColor(...(opts.color || dark));
-    if (opts.bold) doc.setFont('helvetica', 'bold');
-    else doc.setFont('helvetica', 'normal');
-    doc.text(String(str), x, yy, { maxWidth: opts.maxWidth });
-  };
-
-  const line = (yy, color = [229, 231, 235]) => {
-    doc.setDrawColor(...color);
-    doc.line(14, yy, W - 14, yy);
-  };
-
-  const box = (x, yy, w, h, color = lightBg) => {
-    doc.setFillColor(...color);
-    doc.roundedRect(x, yy, w, h, 3, 3, 'F');
-  };
-
-  // ── Header ────────────────────────────────────────────────────────────────
-  doc.setFillColor(...pink);
-  doc.rect(0, 0, W, 26, 'F');
-
-  // Left side — App name + patient name
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 200, 210);
-  doc.text('Swasthasaheli', 14, 9);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(255, 255, 255);
-  // Use splitTextToSize to prevent name from being cut off
-  const nameLines = doc.splitTextToSize(`${tl('pdf.patient')} ${name}`, 110);
-  doc.text(nameLines, 14, 17);
-
-  // Right side — Femfit brand
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text('Femfit', W - 14, 12, { align: 'right' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(255, 200, 210);
-  doc.text(`${tl('pdf.generated')} ${today}`, W - 14, 20, { align: 'right' });
-
-  y = 36;
-
-  // ── Cycle Summary ─────────────────────────────────────────────────────────
-  text(tl('pdf.cycleSummary'), 14, y, { size: 13, bold: true, color: pink });
-  y += 2;
-  line(y, pink);
-  y += 5;
-
-  const half = (W - 28 - 4) / 2;
-  box(14, y, half, 18);
-  text(tl('pdf.lastPeriod'), 18, y + 6, { size: 8, color: muted });
-  text(fmtShort(cycleData?.lastPeriodDate), 18, y + 13, { size: 11, bold: true });
-  box(14 + half + 4, y, half, 18);
-  text(tl('pdf.cycleLength'), 18 + half + 4, y + 6, { size: 8, color: muted });
-  text(`${cycleData?.cycleLength || '—'} days`, 18 + half + 4, y + 13, { size: 11, bold: true });
-  y += 22;
-
-  box(14, y, half, 18);
-  text(tl('pdf.periodDuration'), 18, y + 6, { size: 8, color: muted });
-  text(`${cycleData?.periodDuration || '—'} days`, 18, y + 13, { size: 11, bold: true });
-  box(14 + half + 4, y, half, 18);
-  text(tl('pdf.nextOvulation'), 18 + half + 4, y + 6, { size: 8, color: muted });
-  text(fmtShort(predictions?.ovulation), 18 + half + 4, y + 13, { size: 11, bold: true });
-  y += 22;
-
-  box(14, y, W - 28, 20, [254, 226, 226]);
-  text(tl('pdf.nextPeriod'), 18, y + 6, { size: 8, color: muted });
-  text(fmt(predictions?.nextPeriod), 18, y + 14, { size: 14, bold: true, color: [225, 29, 72] });
-  y += 26;
-
-  // ── Period History ────────────────────────────────────────────────────────
-  text('Period History', 14, y, { size: 13, bold: true, color: pink });
-  y += 2;
-  line(y, pink);
-  y += 5;
-
-  // Table header
-  box(14, y, W - 28, 8, [253, 242, 244]);
-  text(tl('pdf.periodStart'), 18, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
-  text(tl('pdf.periodEnd'), 80, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
-  text(tl('pdf.duration'), 150, y + 5.5, { size: 9, bold: true, color: [190, 24, 93] });
-  y += 10;
-
+  // ── Build period history rows ─────────────────────────────────────────────
+  let historyRows = '';
   if (cycleData?.lastPeriodDate && cycleData?.cycleLength) {
     let start = new Date(cycleData.lastPeriodDate);
     const rows = [];
@@ -127,80 +37,260 @@ export function generateHealthReport({ user, cycleData, assessments, predictions
       start = new Date(start.setDate(start.getDate() - cycleData.cycleLength));
     }
     rows.forEach((r, idx) => {
-      if (idx % 2 === 0) box(14, y - 2, W - 28, 9, [249, 250, 251]);
-      text(fmt(r.start), 18, y + 4.5, { size: 9 });
-      text(fmt(r.end), 80, y + 4.5, { size: 9 });
-      text(`${cycleData.periodDuration} days`, 150, y + 4.5, { size: 9 });
-      y += 9;
+      historyRows += `
+        <tr style="background:${idx % 2 === 0 ? '#f9fafb' : '#fff'}">
+          <td style="padding:7px 10px">${fmt(r.start)}</td>
+          <td style="padding:7px 10px">${fmt(r.end)}</td>
+          <td style="padding:7px 10px">${cycleData.periodDuration} days</td>
+        </tr>`;
     });
   }
-  y += 4;
 
-  // ── PCOS ─────────────────────────────────────────────────────────────────
-  const pcosResult = assessments?.pcos?.result;
-  if (pcosResult) {
-    if (y > 230) { doc.addPage(); y = 20; }
-    text(tl('pdf.pcosRisk'), 14, y, { size: 13, bold: true, color: pink });
-    y += 2; line(y, pink); y += 5;
-    box(14, y, half, 18);
-    text(tl('pdf.riskLevel'), 18, y + 6, { size: 8, color: muted });
-    const bandCol = pcosResult.band === 'low' ? [16, 185, 129] : pcosResult.band === 'moderate' ? [245, 158, 11] : [239, 68, 68];
-    text((pcosResult.band || '—').toUpperCase(), 18, y + 13, { size: 11, bold: true, color: bandCol });
-    box(14 + half + 4, y, half, 18);
-    text(tl('pdf.score'), 18 + half + 4, y + 6, { size: 8, color: muted });
-    text(`${pcosResult.points ?? '—'} / ${pcosResult.maxPoints ?? '—'}`, 18 + half + 4, y + 13, { size: 11, bold: true });
-    y += 22;
-    if (pcosResult.recommendation) {
-      const lines = doc.splitTextToSize(pcosResult.recommendation, W - 28);
-      text(lines.join('\n'), 14, y, { size: 9, color: muted });
-      y += lines.length * 5 + 4;
-    }
-  }
-
-  // ── BMI ───────────────────────────────────────────────────────────────────
-  const bmiResult = assessments?.bmi?.result;
-  if (bmiResult) {
-    if (y > 230) { doc.addPage(); y = 20; }
-    text(tl('pdf.bmiReport'), 14, y, { size: 13, bold: true, color: pink });
-    y += 2; line(y, pink); y += 5;
-    box(14, y, half, 18);
-    text(tl('pdf.bmiValue'), 18, y + 6, { size: 8, color: muted });
-    text(String(bmiResult.bmi), 18, y + 13, { size: 11, bold: true });
-    box(14 + half + 4, y, half, 18);
-    text(tl('pdf.category'), 18 + half + 4, y + 6, { size: 8, color: muted });
-    text(bmiResult.category || '—', 18 + half + 4, y + 13, { size: 11, bold: true });
-    y += 26;
-  }
-
-  // ── Mental Wellbeing ──────────────────────────────────────────────────────
+  // ── Optional sections ─────────────────────────────────────────────────────
+  const pcosResult   = assessments?.pcos?.result;
+  const bmiResult    = assessments?.bmi?.result;
   const mentalResult = assessments?.mental?.result;
-  if (mentalResult) {
-    if (y > 230) { doc.addPage(); y = 20; }
-    text(tl('pdf.mentalWellbeing'), 14, y, { size: 13, bold: true, color: pink });
-    y += 2; line(y, pink); y += 5;
-    box(14, y, half, 18);
-    text(tl('pdf.riskLevel'), 18, y + 6, { size: 8, color: muted });
-    const mCol = mentalResult.band === 'low' ? [16, 185, 129] : mentalResult.band === 'moderate' ? [245, 158, 11] : [239, 68, 68];
-    text((mentalResult.band || '—').toUpperCase(), 18, y + 13, { size: 11, bold: true, color: mCol });
-    box(14 + half + 4, y, half, 18);
-    text(tl('pdf.score'), 18 + half + 4, y + 6, { size: 8, color: muted });
-    text(`${mentalResult.points ?? '—'} / ${mentalResult.maxPoints ?? '—'}`, 18 + half + 4, y + 13, { size: 11, bold: true });
-    y += 26;
-  }
 
-  // ── Footer ────────────────────────────────────────────────────────────────
-  const pageCount = doc.getNumberOfPages();
-  for (let p = 1; p <= pageCount; p++) {
-    doc.setPage(p);
-    doc.setFontSize(7.5);
-    doc.setTextColor(...muted);
-    doc.text(
-      tl('pdf.disclaimer'),
-      W / 2, 290, { align: 'center', maxWidth: W - 28 }
-    );
-  }
+  const bandColor = (band) =>
+    band === 'low' ? '#10b981' : band === 'moderate' ? '#f59e0b' : '#ef4444';
 
-  // ── Download directly — no popup, no print dialog ─────────────────────────
-  const filename = `swasthasaheli-report-${name.replace(/\s+/g, '-').toLowerCase()}.pdf`;
-  doc.save(filename);
+  const pcosHtml = pcosResult ? `
+    <div style="margin-bottom:24px">
+      <h2 style="font-size:14px;font-weight:700;color:#f43f5e;padding-bottom:6px;border-bottom:1.5px solid #f43f5e;margin-bottom:14px">
+        ${tl('pdf.pcosRisk')}
+      </h2>
+      <div style="display:flex;gap:12px;margin-bottom:8px">
+        <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.riskLevel')}</div>
+          <div style="font-size:14px;font-weight:700;color:${bandColor(pcosResult.band)}">${(pcosResult.band || '—').toUpperCase()}</div>
+        </div>
+        <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.score')}</div>
+          <div style="font-size:14px;font-weight:700;color:#1f2937">${pcosResult.points ?? '—'} / ${pcosResult.maxPoints ?? '—'}</div>
+        </div>
+      </div>
+      ${pcosResult.recommendation ? `<p style="font-size:11px;color:#6b7280;margin:0">${pcosResult.recommendation}</p>` : ''}
+    </div>` : '';
+
+  const bmiHtml = bmiResult ? `
+    <div style="margin-bottom:24px">
+      <h2 style="font-size:14px;font-weight:700;color:#f43f5e;padding-bottom:6px;border-bottom:1.5px solid #f43f5e;margin-bottom:14px">
+        ${tl('pdf.bmiReport')}
+      </h2>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.bmiValue')}</div>
+          <div style="font-size:14px;font-weight:700;color:#1f2937">${bmiResult.bmi}</div>
+        </div>
+        <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.category')}</div>
+          <div style="font-size:14px;font-weight:700;color:#1f2937">${bmiResult.category || '—'}</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  const mentalHtml = mentalResult ? `
+    <div style="margin-bottom:24px">
+      <h2 style="font-size:14px;font-weight:700;color:#f43f5e;padding-bottom:6px;border-bottom:1.5px solid #f43f5e;margin-bottom:14px">
+        ${tl('pdf.mentalWellbeing')}
+      </h2>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.riskLevel')}</div>
+          <div style="font-size:14px;font-weight:700;color:${bandColor(mentalResult.band)}">${(mentalResult.band || '—').toUpperCase()}</div>
+        </div>
+        <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.score')}</div>
+          <div style="font-size:14px;font-weight:700;color:#1f2937">${mentalResult.points ?? '—'} / ${mentalResult.maxPoints ?? '—'}</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  // ── Pick Unicode font for non-Latin scripts ───────────────────────────────
+  // Loaded via a <link> injected into the offscreen container's shadow DOM
+  // doesn't work — so we inject a @import into a <style> tag instead.
+  const googleFontImport =
+    language === 'bn'
+      ? "@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap');"
+      : language === 'hi'
+      ? "@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap');"
+      : '';
+
+  const fontFamily =
+    language === 'bn'
+      ? "'Noto Sans Bengali', sans-serif"
+      : language === 'hi'
+      ? "'Noto Sans Devanagari', sans-serif"
+      : "'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+  // ── Build the HTML string for the report ─────────────────────────────────
+  const reportHtml = `
+    <style>
+      ${googleFontImport}
+      .ss-report * { box-sizing: border-box; margin: 0; padding: 0; }
+      .ss-report {
+        font-family: ${fontFamily};
+        color: #1f2937;
+        background: #fff;
+        width: 794px;
+        padding: 0;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+    </style>
+    <div class="ss-report">
+
+      <!-- Header -->
+      <div style="background:#f43f5e;color:#fff;padding:18px 28px;display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:10px;color:#ffc8d2;margin-bottom:4px">Swasthasaheli</div>
+          <div style="font-size:15px;font-weight:700">${tl('pdf.patient')} ${name}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700">Femfit</div>
+          <div style="font-size:10px;color:#ffc8d2;margin-top:4px">${tl('pdf.generated')} ${today}</div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div style="padding:24px 28px">
+
+        <!-- Cycle Summary -->
+        <div style="margin-bottom:24px">
+          <h2 style="font-size:14px;font-weight:700;color:#f43f5e;padding-bottom:6px;border-bottom:1.5px solid #f43f5e;margin-bottom:14px">
+            ${tl('pdf.cycleSummary')}
+          </h2>
+          <div style="display:flex;gap:12px;margin-bottom:10px">
+            <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+              <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.lastPeriod')}</div>
+              <div style="font-size:14px;font-weight:700">${fmtShort(cycleData?.lastPeriodDate)}</div>
+            </div>
+            <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+              <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.cycleLength')}</div>
+              <div style="font-size:14px;font-weight:700">${cycleData?.cycleLength || '—'} days</div>
+            </div>
+            <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+              <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.periodDuration')}</div>
+              <div style="font-size:14px;font-weight:700">${cycleData?.periodDuration || '—'} days</div>
+            </div>
+            <div style="flex:1;background:#fdf2f4;border-radius:8px;padding:10px 14px">
+              <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.nextOvulation')}</div>
+              <div style="font-size:14px;font-weight:700">${fmtShort(predictions?.ovulation)}</div>
+            </div>
+          </div>
+          <div style="background:#fee2e6;border-radius:8px;padding:12px 16px">
+            <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${tl('pdf.nextPeriod')}</div>
+            <div style="font-size:18px;font-weight:700;color:#e11d48">${fmt(predictions?.nextPeriod)}</div>
+          </div>
+        </div>
+
+        <!-- Period History -->
+        <div style="margin-bottom:24px">
+          <h2 style="font-size:14px;font-weight:700;color:#f43f5e;padding-bottom:6px;border-bottom:1.5px solid #f43f5e;margin-bottom:14px">
+            ${tl('pdf.periodHistory')}
+          </h2>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr style="background:#fdf2f4">
+                <th style="padding:7px 10px;text-align:left;color:#be185d;font-weight:700">${tl('pdf.periodStart')}</th>
+                <th style="padding:7px 10px;text-align:left;color:#be185d;font-weight:700">${tl('pdf.periodEnd')}</th>
+                <th style="padding:7px 10px;text-align:left;color:#be185d;font-weight:700">${tl('pdf.duration')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${historyRows || `<tr><td colspan="3" style="padding:10px;color:#9ca3af">—</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+
+        ${pcosHtml}
+        ${bmiHtml}
+        ${mentalHtml}
+
+        <!-- Footer -->
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:9px;color:#9ca3af;text-align:center">
+          ${tl('pdf.disclaimer')}
+        </div>
+
+      </div>
+    </div>`;
+
+  // ── Mount the HTML in an off-screen container ─────────────────────────────
+  const container = document.createElement('div');
+  container.style.cssText = [
+    'position:fixed',
+    'top:-9999px',
+    'left:-9999px',
+    'width:794px',          // A4 at 96 dpi ≈ 794px wide
+    'background:#fff',
+    'z-index:-1',
+  ].join(';');
+  container.innerHTML = reportHtml;
+  document.body.appendChild(container);
+
+  // For non-Latin scripts: wait for the Google Font to load before capturing
+  const waitForFont = () => {
+    if (language === 'en') return Promise.resolve();
+    const fontName =
+      language === 'bn' ? 'Noto Sans Bengali' : 'Noto Sans Devanagari';
+    // document.fonts.load resolves when the font is available
+    return document.fonts.load(`700 14px "${fontName}"`).catch(() => {});
+  };
+
+  try {
+    // Wait for font, then add a small buffer for layout
+    await waitForFont();
+    await new Promise((r) => setTimeout(r, 300));
+
+    const canvas = await html2canvas(container, {
+      scale: 2,          // 2× for crisp text on retina / print
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+    });
+
+    const imgData   = canvas.toDataURL('image/jpeg', 0.95);
+    const pdfW      = 210;               // A4 mm
+    const pdfH      = (canvas.height / canvas.width) * pdfW;
+
+    // If the report is taller than A4, split into multiple pages
+    const pageHeight = 297; // A4 height mm
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    if (pdfH <= pageHeight) {
+      doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+    } else {
+      // Multi-page: slice the image by page height
+      const ratio       = canvas.width / pdfW;          // px per mm
+      const pageHeightPx = pageHeight * ratio;
+      let   offsetPx    = 0;
+      let   page        = 0;
+
+      while (offsetPx < canvas.height) {
+        if (page > 0) doc.addPage();
+
+        // Create a slice canvas for this page
+        const sliceH   = Math.min(pageHeightPx, canvas.height - offsetPx);
+        const slice    = document.createElement('canvas');
+        slice.width    = canvas.width;
+        slice.height   = sliceH;
+        slice.getContext('2d').drawImage(
+          canvas,
+          0, offsetPx, canvas.width, sliceH,
+          0, 0, canvas.width, sliceH
+        );
+
+        const sliceMmH = sliceH / ratio;
+        doc.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfW, sliceMmH);
+        offsetPx += pageHeightPx;
+        page++;
+      }
+    }
+
+    const filename = `swasthasaheli-report-${name.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+    doc.save(filename);
+
+  } finally {
+    document.body.removeChild(container);
+  }
 }
